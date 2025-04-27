@@ -76,9 +76,32 @@ async def main():
     query = "select * from api_response " + ignore_expunged + order_by_rating #+ " limit 10000"
     res_cursor = await db0.execute(query)
     prefetch_queue = []
+    jumpdst = None
     while True:
+
         while len(prefetch_queue) <= C_PREFETCH_ENTRIES:
-            gid, entry = await res_cursor.fetchone()
+
+            #i hate this
+            if jumpdst != None:
+                #if jumpdst happens to be in a prefetch
+                in_prefetch = False
+                for vt in prefetch_queue:
+                    v = await vt
+                    if jumpdst == v["gid"]:
+                        in_prefetch = True
+                if not in_prefetch:
+                    prefetch_queue = []
+
+                while jumpdst != None:
+                    if in_prefetch:
+                        break
+                    gid, entry = await res_cursor.fetchone()
+                    if gid == jumpdst:
+                        jumpdst = None
+                    
+            else:
+                gid, entry = await res_cursor.fetchone()
+
             entry = json.loads(entry)
             if not check_entry(entry):
                 continue
@@ -88,6 +111,10 @@ async def main():
         inp = await get_input_async("")
         if inp == "q":
             break
+        #j:gid
+        if "j" in inp:
+            jumpdst = int(inp.split(":")[1])
+            continue
     await db0.close()
 
 
