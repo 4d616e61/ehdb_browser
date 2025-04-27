@@ -18,6 +18,14 @@ async def get_input_async(prompt):
 
 
 
+def get_last_gid():
+    with open(C_GID_SAVE_PATH, "r") as f:
+        res = int(f.read())
+    return res
+
+def set_last_gid(gid):
+    with open(C_GID_SAVE_PATH, "w") as f:
+        f.write(str(gid))
 
 
 # for (k,v) in r0:
@@ -38,12 +46,18 @@ lang_tags_blacklist = [
 ]
 
 other_blacklist = [
-    "mixed:guro"
+    "mixed:guro",
+
+
+    "female:big breasts",
+    "female:rape",
+    "female:mind control"
 ]
 tags_blacklist = lang_tags_blacklist + other_blacklist
 tags_whitelist = [
-    "mixed:incest"
-
+    "male:sole male",
+    "female:sole female",
+    "mixed:incest",
 ]
 
 category_whitelist = ["Manga", "Doujinshi"]
@@ -53,12 +67,14 @@ def check_entry(entry):
     if not category in category_whitelist:
         return False
     if not check_blacklist(tags, tags_blacklist):
+
         return False
     if not check_whitelist(tags, tags_whitelist):
         return False
     if entry["expunged"]:
         return False
     return True
+
 
 
 
@@ -83,38 +99,45 @@ async def main():
 
             #i hate this
             if jumpdst != None:
-                #if jumpdst happens to be in a prefetch
-                in_prefetch = False
-                for vt in prefetch_queue:
-                    v = await vt
-                    if jumpdst == v["gid"]:
-                        in_prefetch = True
-                if not in_prefetch:
-                    prefetch_queue = []
-
                 while jumpdst != None:
-                    if in_prefetch:
-                        break
-                    gid, entry = await res_cursor.fetchone()
+                    if len(prefetch_queue) > 0:
+                        entry = await prefetch_queue.pop(0)
+                        if jumpdst == entry["gid"]:
+                            jumpdst = None
+                            #put it back(lol)
+                            prefetch_queue.insert(0, display.prefetch_entry(entry=entry))
+                            break
+                        continue
+                    gid, entry_text = await res_cursor.fetchone()
+                    entry = json.loads(entry_text)
                     if gid == jumpdst:
                         jumpdst = None
-                    
             else:
-                gid, entry = await res_cursor.fetchone()
+                gid, entry_text = await res_cursor.fetchone()
+                entry = json.loads(entry_text)
 
-            entry = json.loads(entry)
+            
+            
             if not check_entry(entry):
                 continue
             prefetch_queue.append(asyncio.create_task(display.prefetch_entry(entry)))
         res = await prefetch_queue.pop(0)
         await display.print_entry(res)
+
         inp = await get_input_async("")
         if inp == "q":
+            set_last_gid(res["gid"])
             break
+        if inp == "jl":
+            jumpdst = get_last_gid()
+            continue
+
         #j:gid
-        if "j" in inp:
+        if inp[:2] == "j:":
             jumpdst = int(inp.split(":")[1])
             continue
+        
+        set_last_gid(res["gid"])
     await db0.close()
 
 

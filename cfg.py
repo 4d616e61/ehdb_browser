@@ -7,3 +7,4 @@ C_DB_FETCH_CHUNK_SIZE = C_DB_MIN_BUFFER_SIZE
 
 
 C_THUMBCACHE_DIR = "./thumbcache"
+C_GID_SAVE_PATH = "./last_gid"
