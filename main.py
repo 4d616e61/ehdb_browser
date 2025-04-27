@@ -7,7 +7,7 @@ import json
 import ratings_calc
 import display
 from cfg import *
-
+import os
 
 async def get_input_async(prompt):
     return await asyncio.get_event_loop().run_in_executor(
@@ -19,6 +19,8 @@ async def get_input_async(prompt):
 
 
 def get_last_gid():
+    if not os.path.exists(C_GID_SAVE_PATH):
+        return None
     with open(C_GID_SAVE_PATH, "r") as f:
         res = int(f.read())
     return res
@@ -57,6 +59,7 @@ tags_blacklist = lang_tags_blacklist + other_blacklist
 tags_whitelist = [
     "male:sole male",
     "female:sole female",
+    "female:sister",
     "mixed:incest",
 ]
 
