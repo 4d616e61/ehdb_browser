@@ -126,8 +126,12 @@ async def main():
             prefetch_queue.append(asyncio.create_task(display.prefetch_entry(entry)))
         res = await prefetch_queue.pop(0)
         await display.print_entry(res)
+        try:
+            inp = await get_input_async("")
+        except EOFError:
+            set_last_gid(res["gid"])
+            break
 
-        inp = await get_input_async("")
         if inp == "q":
             set_last_gid(res["gid"])
             break
