@@ -92,7 +92,7 @@ async def main():
 
     order_by_rating = " order by json_extract(resp, '$.rating') desc"
     ignore_expunged = " where json_extract(resp, '$.expunged')=false "
-    query = "select * from api_response " + ignore_expunged + order_by_rating #+ " limit 10000"
+    query = "select gid, resp from api_response " + ignore_expunged + order_by_rating #+ " limit 10000"
     res_cursor = await db0.execute(query)
     prefetch_queue = []
     jumpdst = None

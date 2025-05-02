@@ -35,8 +35,8 @@ async def _fetch_image(gid, url):
      
 
 async def print_image(gid, url):
-    #TODO: use coroutine 
-    p = subprocess.run(["/usr/bin/kitty", "icat", await _lookup_or_fetch(gid, url)])
+    #TODO: use coroutine
+    p = subprocess.run(["/usr/bin/kitty", "icat", "--scale-up", await _lookup_or_fetch(gid, url)])
     #sys.stdout.write(p)
 
 
