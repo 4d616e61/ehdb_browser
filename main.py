@@ -1,11 +1,8 @@
 import asyncio
-import dis
-import re
 import aiosqlite
 import sys
 import json
-import ratings_calc
-import display
+import lib.display as display
 from cfg import *
 import os
 

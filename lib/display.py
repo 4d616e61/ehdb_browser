@@ -1,7 +1,7 @@
 import json
-import ratings_calc
-import thumbfetch
-import ehutils
+from . import ratings_calc
+from . import thumbfetch
+from . import ehutils
 
 
 def url_from_entry(v):
