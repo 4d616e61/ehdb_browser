@@ -34,9 +34,16 @@ async def _fetch_image(gid, url):
         f.write(data)
      
 
-async def print_image(gid, url):
+async def print_image(gid, url, detect_kitty=True):
+    kitty = True
+    if detect_kitty:
+        kitty = os.environ.get("TERM") == "xterm-kitty"
     #TODO: use coroutine
-    p = subprocess.run(["/usr/bin/kitty", "icat", "--scale-up", await _lookup_or_fetch(gid, url)])
+    if kitty:
+        p = subprocess.run(["/usr/bin/kitty", "icat", "--scale-up", await _lookup_or_fetch(gid, url)])
+        return
+    #sixel 
+    p = subprocess.run(["/usr/bin/magick", await _lookup_or_fetch(gid, url), "sixel:-"])
     #sys.stdout.write(p)
 
 
