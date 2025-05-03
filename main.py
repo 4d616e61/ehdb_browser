@@ -12,8 +12,10 @@ async def get_input_async(prompt):
     )
 
 
-
-
+def split_tag(tag):
+    if ":" in tag:
+        return tuple(tag.split(":"))
+    return ("", tag)
 
 def get_last_gid():
     if not os.path.exists(C_GID_SAVE_PATH):
@@ -30,12 +32,33 @@ def set_last_gid(gid):
 # for (k,v) in r0:
 #     all_data[k] = json.loads(v)
 #True if passes check, false otherwise
+def check_single_tag_match(tag : str, taglist : list):
+    namespace, name = split_tag(tag)
+    for dsttag in taglist:
+        dstns, dstname = split_tag(dsttag)
+        if namespace != "*":
+            if namespace != dstns:
+                continue
+        if name != "*":
+            if name != dstname:
+                continue
+        return True
+    return False
+
 def check_blacklist(taglist, blacklist):
-    return set(blacklist).isdisjoint(set(taglist))
+    for t in blacklist:
+        if check_single_tag_match(t, taglist):
+            return False
+    return True
+    #return set(blacklist).isdisjoint(set(taglist))
 
 #Same as above
 def check_whitelist(taglist, whitelist):
-    return set(whitelist).issubset(set(taglist))
+    for t in whitelist:
+        if not check_single_tag_match(t, taglist):
+            return False
+    return True
+    #return set(whitelist).issubset(set(taglist))
 
 lang_tags_blacklist = [
     "language:vietnamese",
@@ -49,7 +72,7 @@ other_blacklist = [
 
 
     "female:big breasts",
-    "female:rape",
+    "*:rape",
     "female:mind control"
 ]
 tags_blacklist = lang_tags_blacklist + other_blacklist
@@ -58,6 +81,7 @@ tags_whitelist = [
     "female:sole female",
     "female:sister",
     "mixed:incest",
+    "female:small breasts",
 ]
 
 category_whitelist = ["Manga", "Doujinshi"]
@@ -88,7 +112,9 @@ async def main():
 
 
     order_by_rating = " order by json_extract(resp, '$.rating') desc"
+    order_by_rating = " order by rating desc "
     ignore_expunged = " where json_extract(resp, '$.expunged')=false "
+    ignore_expunged = " where expunged=0 "
     query = "select gid, resp from api_response " + ignore_expunged + order_by_rating #+ " limit 10000"
     res_cursor = await db0.execute(query)
     prefetch_queue = []
