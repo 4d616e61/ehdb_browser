@@ -87,12 +87,16 @@ def check_entry(entry):
     return True
 
 
-def read_and_append_to_list(filename : str, dst : list):
+def read_to_list(filename : str):
+    dst = []
     with open(filename, "r") as f:
         while True:
             res = f.readline()
             if res == "":
                 break
+            res = res.strip()
+            if res == "":
+                continue
             dst.append(res)
     return dst
 
@@ -121,8 +125,8 @@ def expand_filter_set(filter_set : set[str]):
 def init_filters(whitelist, blacklist):
     global tags_whitelist
     global tags_blacklist
-    tags_whitelist = set(read_and_append_to_list(whitelist, []))
-    tags_blacklist  = set(read_and_append_to_list(blacklist, []))
+    tags_whitelist = set(read_to_list(whitelist))
+    tags_blacklist  = set(read_to_list(blacklist))
 
     tags_whitelist = expand_filter_set(tags_whitelist)
     tags_blacklist = expand_filter_set(tags_blacklist)
@@ -146,7 +150,6 @@ async def main():
 
     db0 = await aiosqlite.connect(db0_n)
     
-
 
     #order_by_rating = " order by json_extract(resp, '$.rating') desc"
     order_by_rating = " order by rating desc "
