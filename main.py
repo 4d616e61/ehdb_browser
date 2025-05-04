@@ -104,7 +104,7 @@ def expand_tag(tag):
     if ns == "*":
         res = []
         for k in set(ALL_NAMESPACES.values()):
-            res.append(f"{ALL_NAMESPACES[k]}:{v}")
+            res.append(f"{k}:{v}")
         return res
     return [f"{ALL_NAMESPACES[ns]}:{v}"]
 
