@@ -65,32 +65,8 @@ def check_whitelist(taglist : list[str], whitelist : set[str]):
     #return True
     return whitelist.issubset(set(taglist))
 
-lang_tags_blacklist = [
-    "language:vietnamese",
-    "language:thai",
-    "language:spanish",
-    "language:korean"
-
-]
-
-other_blacklist = [
-    "mixed:guro",
 
 
-    "female:big breasts",
-    "*:rape",
-    "*:prostitution",
-    "*:mind control",
-    "*.blackmail"
-]
-tags_blacklist = lang_tags_blacklist + other_blacklist
-tags_whitelist = [
-    "male:sole male",
-    "female:sole female",
-    "female:sister",
-    "mixed:incest",
-    "female:small breasts",
-]
 
 tags_whitelist = set()
 tags_blacklist = set()
