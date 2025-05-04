@@ -20,8 +20,10 @@ ALL_NAMESPACES = {
     "f" : "female",
     "x" : "mixed",
     "o" : "other"
-    
 }
+
+for v in set(ALL_NAMESPACES.values()):
+    ALL_NAMESPACES[v] = v
 
 def namespace_tags(tags) -> dict:
     res = {}
