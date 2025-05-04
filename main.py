@@ -1,10 +1,15 @@
 import asyncio
+import glob
 import aiosqlite
 import sys
 import json
 import lib.display as display
 from cfg import *
 import os
+import argparse
+
+from lib.ehutils import ALL_NAMESPACES
+
 
 async def get_input_async(prompt):
     return await asyncio.get_event_loop().run_in_executor(
@@ -45,25 +50,26 @@ def check_single_tag_match(tag : str, taglist : list):
         return True
     return False
 
-def check_blacklist(taglist, blacklist):
-    for t in blacklist:
-        if check_single_tag_match(t, taglist):
-            return False
-    return True
-    #return set(blacklist).isdisjoint(set(taglist))
+def check_blacklist(taglist : list[str], blacklist : set[str]):
+    #for t in blacklist:
+    #    if check_single_tag_match(t, taglist):
+    #        return False
+    #return True
+    return blacklist.isdisjoint(set(taglist))
 
 #Same as above
-def check_whitelist(taglist, whitelist):
-    for t in whitelist:
-        if not check_single_tag_match(t, taglist):
-            return False
-    return True
-    #return set(whitelist).issubset(set(taglist))
+def check_whitelist(taglist : list[str], whitelist : set[str]):
+    #for t in whitelist:
+    #    if not check_single_tag_match(t, taglist):
+    #        return False
+    #return True
+    return whitelist.issubset(set(taglist))
 
 lang_tags_blacklist = [
     "language:vietnamese",
     "language:thai",
-    "language:spanish"
+    "language:spanish",
+    "language:korean"
 
 ]
 
@@ -73,7 +79,9 @@ other_blacklist = [
 
     "female:big breasts",
     "*:rape",
-    "female:mind control"
+    "*:prostitution",
+    "*:mind control",
+    "*.blackmail"
 ]
 tags_blacklist = lang_tags_blacklist + other_blacklist
 tags_whitelist = [
@@ -83,6 +91,9 @@ tags_whitelist = [
     "mixed:incest",
     "female:small breasts",
 ]
+
+tags_whitelist = set()
+tags_blacklist = set()
 
 category_whitelist = ["Manga", "Doujinshi"]
 def check_entry(entry):
@@ -100,20 +111,70 @@ def check_entry(entry):
     return True
 
 
+def read_and_append_to_list(filename : str, dst : list):
+    with open(filename, "r") as f:
+        while True:
+            res = f.readline()
+            if res == "":
+                break
+            dst.append(res)
+    return dst
+
+
+def expand_tag(tag):
+    ns, v = split_tag(tag)
+    if ns == "":
+        return [tag]
+    if ns == "*":
+        res = []
+        for k in set(ALL_NAMESPACES.values()):
+            res.append(f"{ALL_NAMESPACES[k]}:{v}")
+        return res
+    return [f"{ALL_NAMESPACES[ns]}:{v}"]
+
+def expand_filter_set(filter_set : set[str]):
+    new_set = set()
+    for t in filter_set:
+        for et in expand_tag(t):
+            new_set.add(et)
+    return new_set
+        
+    
+
+
+def init_filters(whitelist, blacklist):
+    global tags_whitelist
+    global tags_blacklist
+    tags_whitelist = set(read_and_append_to_list(whitelist, []))
+    tags_blacklist  = set(read_and_append_to_list(blacklist, []))
+
+    tags_whitelist = expand_filter_set(tags_whitelist)
+    tags_blacklist = expand_filter_set(tags_blacklist)
+    
+
 
 
 
 async def main():
-    db0_n = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        description="ehdb browser"
+    )
+    parser.add_argument("-d", "--database", default="cachedb.db")
+    parser.add_argument("-w", "--whitelist", default="whitelist.txt")
+    parser.add_argument("-b", "--blacklist", default="blacklist.txt")
+
+    args = parser.parse_args(sys.argv[1:])
+    db0_n = args.database
+    init_filters(args.whitelist, args.blacklist)
 
 
     db0 = await aiosqlite.connect(db0_n)
+    
 
 
-
-    order_by_rating = " order by json_extract(resp, '$.rating') desc"
+    #order_by_rating = " order by json_extract(resp, '$.rating') desc"
     order_by_rating = " order by rating desc "
-    ignore_expunged = " where json_extract(resp, '$.expunged')=false "
+    #ignore_expunged = " where json_extract(resp, '$.expunged')=false "
     ignore_expunged = " where expunged=0 "
     query = "select gid, resp from api_response " + ignore_expunged + order_by_rating #+ " limit 10000"
     res_cursor = await db0.execute(query)
@@ -131,7 +192,7 @@ async def main():
                         if jumpdst == entry["gid"]:
                             jumpdst = None
                             #put it back(lol)
-                            prefetch_queue.insert(0, display.prefetch_entry(entry=entry))
+                            prefetch_queue.insert(0, asyncio.create_task(display.prefetch_entry(entry=entry)))
                             break
                         continue
                     gid, entry_text = await res_cursor.fetchone()
@@ -141,11 +202,10 @@ async def main():
             else:
                 gid, entry_text = await res_cursor.fetchone()
                 entry = json.loads(entry_text)
+                if not check_entry(entry):
+                    continue
 
-            
-            
-            if not check_entry(entry):
-                continue
+                  
             prefetch_queue.append(asyncio.create_task(display.prefetch_entry(entry)))
         res = await prefetch_queue.pop(0)
         await display.print_entry(res)

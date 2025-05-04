@@ -21,6 +21,7 @@ async def print_entry(entry) :
     tags = v["tags"]
     tags_ns = ehutils.namespace_tags(tags)
     thumb = v["thumb"]
+    pages = v["filecount"]
     min_n_ratings = ratings_calc.get_least_steps(float(rating))
     print(title)
     print(url_from_entry(entry))
@@ -31,6 +32,7 @@ async def print_entry(entry) :
         tag_str = tag_str[:-2]
         print(tag_str)
     print(category)
+    print(f"pages: {pages}")
     await thumbfetch.print_image(gid, thumb)
     
 

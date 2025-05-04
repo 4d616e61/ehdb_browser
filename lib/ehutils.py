@@ -4,6 +4,7 @@
 ALL_NAMESPACES = {
     #idk what the alias of those are 
     "temp" : "temp",
+    "" : "temp",
     "r" : "reclass",
     "l" : "language",
     "lang" : "language",
